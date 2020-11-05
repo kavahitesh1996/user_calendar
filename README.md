@@ -41,7 +41,7 @@ In general process consists of these steps:
 * [create] credentials for Service Account (service account key)
 
 * save json-api-private-key - _you'll need to put it on your server
-  (into "/edx/app/edxapp/", for example_);
+  (into "/edx-platform/user_calendar/calendar_tab", for example_);
 
 [create]: https://console.developers.google.com/apis/credentials
 
@@ -56,7 +56,6 @@ In "/edx/app/edxapp/lms.env.json" add:
 and to the list of FEATURES add:
 
     "ENABLE_CALENDAR": true,
-    "GOOGLE_CALENDAR_TAB_PRIVATE_KEY_URL": "/edx/app/edxapp/edx-calendar-tab-google-api-private-key.json"
 
 In "/edx/app/edxapp/edx-platform/lms/urls.py" add __before__
 static_tab urls:
@@ -64,9 +63,7 @@ static_tab urls:
     if settings.FEATURES.get('ENABLE_CALENDAR'):
         urlpatterns += (
            url(
-               r'^courses/{}/tab/calendar/'.format(
-                   settings.COURSE_ID_PATTERN,
-               ),
+               r'^calendar/',
                include('calendar_tab.urls'),
                name='calendar_tab_endpoints',
            ),
@@ -109,10 +106,6 @@ ADDITIONAL NOTES:
 
 After installation you should get the following state.
 
-* Studio's Content/Pages has Calendar page:
+* LMS's main menu has Calendar tab:
 
-![Calendar page](doc/img/calendar_studio_view.png)
-
-* LMS's main menu (tabs) has Calendar tab:
-
-![Calendar page](doc/img/calendar_lms_view.png)
+![Calendar page](doc/img/lms_calander.png)
