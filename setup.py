@@ -8,7 +8,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name="edx-calendar-tab",
+    name="user_calendar",
     version="0.1",
     install_requires=[
         "setuptools",
@@ -18,6 +18,6 @@ setup(
     ],
     requires=[],
     packages=["calendar_tab"],
-    description='Open Edx Calendar tab (based on Google Calendar service)',
+    description='Open Edx Calendar (based on Google Calendar service)',
     long_description=README
 )
