@@ -1,13 +1,14 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import  url
 from django.contrib.auth.decorators import login_required
 
 from .views import InitCalendarView, events_view, dataprocessor_view
+from calendar_tab import views
 
-urlpatterns = patterns(
-    'calendar_tab.views',
-    url(r"^dataprocessor/$", dataprocessor_view, name="dataprocessor"),
+urlpatterns = [
+    url(r"^view/dataprocessor/$", views.dataprocessor_view, name="dataprocessor"),
     url(r"^init/$",
         login_required(InitCalendarView.as_view()),
         name="calendar_init"),
-    url(r"^events/$", events_view, name="events_view"),
-)
+    url(r"^view/$", views.get_calendar, name="calendar_view"),
+    url(r"^view/events/$", views.events_view, name="events_view"),
+]

@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, JsonResponse
 from django.template.context_processors import csrf
-from django.template.loader import render_to_string
+# from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
@@ -13,15 +13,21 @@ from django.views.generic import View
 from opaque_keys.edx.keys import CourseKey
 from courseware.access import has_access
 from courseware.courses import get_course_with_access
-from web_fragments.views import FragmentView
-from web_fragments.fragment import Fragment
+from django.template import Context, Template
 
 import pytz
 from dateutil import parser
 
-from .models import CourseCalendar, CourseCalendarEvent
+from .models import UserCalendar, UserCalendarEvent
 from .utils import gcal_service
 from . import VENDOR_CSS_URL, VENDOR_JS_URL, VENDOR_PLUGIN_JS_URL, JS_URL
+
+# from edxmako.shortcuts import render_to_response, render_to_string
+from django.shortcuts import redirect, render_to_response
+
+
+from django.views.generic.edit  import CreateView
+
 
 log = logging.getLogger(__name__)
 
@@ -48,31 +54,27 @@ def to_google_datetime(dhx_datetime):
     return dt_aware.isoformat()
 
 
-def get_calendar_id_by_course_id(course_id):
+def get_calendar_id(user):
     """
-    Returns google calendar ID by given course key.
+    Returns google calendar ID by given User.
     """
-    course_calendar_data = CourseCalendar.objects.filter(
-        course_id=course_id).values('course_id', 'calendar_id').first()
-    calendar_id = course_calendar_data.get(
-        'calendar_id') if course_calendar_data else ''
+    user_calendar_data = UserCalendar.objects.filter(
+        username=user.username).values('username', 'calendar_id').first()
+    calendar_id = user_calendar_data.get(
+        'calendar_id') if user_calendar_data else ''
     return calendar_id
 
 
-def _create_base_calendar_view_context(request, course_id):
+def _create_base_calendar_view_context(request):
     """
     Returns the default template context for rendering calendar view.
     """
     user = request.user
-    course_key = CourseKey.from_string(course_id)
-    course = get_course_with_access(user, 'load', course_key,
-                                    check_if_enrolled=True)
     return {
         'csrf': csrf(request)['csrf_token'],
-        'course': course,
         'user': user,
-        'is_staff': is_staff(user, course_id),
-        'calendar_id': get_calendar_id_by_course_id(course_id),
+        'is_staff': is_staff(user),
+        'calendar_id': get_calendar_id(user),
     }
 
 
@@ -81,65 +83,26 @@ def has_permission(user, api_event):
     Has given User the permission to edit given Event?
     """
     try:
-        db_event = CourseCalendarEvent.objects.get(event_id=api_event['id'])
+        db_event = UserCalendarEvent.objects.get(event_id=api_event['id'])
         return user.username == db_event.edx_user or is_staff(
-            user, db_event.course_calendar.course_id)
+            user, db_event.user_calendar.username)
     except (ObjectDoesNotExist, KeyError) as e:
         log.warn(e)
         return False
 
 
-def is_staff(user, course_id):
+def is_staff(user):
     """
-    Is this User the Personnel of the Course with this ID?
+    Is this User Access
     """
-    course_key = CourseKey.from_string(course_id)
-    course = get_course_with_access(user, 'load', course_key,
-                                    check_if_enrolled=True)
-    return bool(has_access(user, 'staff', course, course_id))
+    return user.is_staff
 
 
-class CalendarTabFragmentView(FragmentView):
-    """
-    Fragment view implementation of the calendar tab.
-    """
-
-    def render_to_fragment(self, request, course_id=None, **kwargs):
-        """
-        Render the calendar tab to a fragment.
-        Args:
-            request: The Django request.
-            course_id: The id of the course.
-
-        Returns:
-            Fragment: The fragment representing the calendar tab.
-        """
-        try:
-            context = _create_base_calendar_view_context(request, course_id)
-            log.debug(context)
-            html = render_to_string('calendar_tab/calendar_tab_fragment.html',
-                                    context)
-            fragment = Fragment(html)
-            fragment.add_css_url(VENDOR_CSS_URL)
-            fragment.add_javascript_url(VENDOR_JS_URL)
-            fragment.add_javascript_url(VENDOR_PLUGIN_JS_URL)
-            fragment.add_javascript_url(JS_URL)
-            inline_js = render_to_string(
-                'calendar_tab/calendar_tab_js.template', context)
-            fragment.add_javascript(inline_js)
-            return fragment
-
-        except Exception as e:
-            log.exception(e)
-            html = render_to_string('calendar_tab/500_fragment.html')
-            return Fragment(html)
-
-
-def events_view(request, course_id):
+def events_view(request):
     """
     Return all google calendar events for given course.
     """
-    calendar_id = get_calendar_id_by_course_id(course_id)
+    calendar_id = get_calendar_id(request.user)
     try:
         response = gcal_service.events().list(calendarId=calendar_id,
                                               pageToken=None).execute()
@@ -157,7 +120,7 @@ def events_view(request, course_id):
         return JsonResponse(data=events, status=200, safe=False)
 
 
-def _get_event_data(post_data, course_id):
+def _get_event_data(post_data, username):
     event = {
         'id': post_data.get('id'),
         'summary': post_data['text'],
@@ -169,17 +132,17 @@ def _get_event_data(post_data, course_id):
         'end': {
             'dateTime': to_google_datetime(post_data['end_date']),
         },
-        'course_id': course_id,
+        'username': username,
     }
     return event
 
 
-def _create_event(request, course_id, response):
+def _create_event(request, response):
     """
     Creates new event in google calendar and returns feedback.
     """
-    calendar_id = get_calendar_id_by_course_id(course_id)
-    event = _get_event_data(request.POST, course_id)
+    calendar_id = get_calendar_id(request.user)
+    event = _get_event_data(request.POST, request.user.username)
     try:
         new_event = gcal_service.events().insert(calendarId=calendar_id,
                                                  body=event).execute()
@@ -187,7 +150,7 @@ def _create_event(request, course_id, response):
         log.exception(e)
         status = 500
     else:
-        cc_event = CourseCalendarEvent(course_calendar_id=calendar_id,
+        cc_event = UserCalendarEvent(user_calendar_id=calendar_id,
                                        event_id=new_event['id'],
                                        edx_user=request.user)
         cc_event.save()
@@ -199,12 +162,12 @@ def _create_event(request, course_id, response):
     return status, response
 
 
-def _update_event(request, course_id, response):
+def _update_event(request, response):
     """
     Updates given event in google calendar and returns feedback.
     """
-    calendar_id = get_calendar_id_by_course_id(course_id)
-    event = _get_event_data(request.POST, course_id)
+    calendar_id = get_calendar_id(request.user)
+    event = _get_event_data(request.POST, request.user.username)
     try:
         if has_permission(request.user, event):
             updated_event = gcal_service.events()\
@@ -226,18 +189,18 @@ def _update_event(request, course_id, response):
     return status, response
 
 
-def _delete_event(request, course_id, response):
+def _delete_event(request, response):
     """
     Deletes given event in google calendar and returns feedback.
     """
-    calendar_id = get_calendar_id_by_course_id(course_id)
-    event = _get_event_data(request.POST, course_id)
+    calendar_id = get_calendar_id(request.user)
+    event = _get_event_data(request.POST, request.user.username)
     try:
         if has_permission(request.user, event):
             gcal_service.events().delete(calendarId=calendar_id,
                                          eventId=event['id']).execute()
             try:
-                CourseCalendarEvent.objects.get(event_id=event['id']).delete()
+                UserCalendarEvent.objects.get(event_id=event['id']).delete()
             except ObjectDoesNotExist as e:
                 log.warn(e)
 
@@ -256,7 +219,7 @@ def _delete_event(request, course_id, response):
 
 
 @csrf_exempt
-def dataprocessor_view(request, course_id):
+def dataprocessor_view(request):
     """
     Processes insert/update/delete event requests.
     """
@@ -269,26 +232,23 @@ def dataprocessor_view(request, course_id):
         command = request.POST['!nativeeditor_status']
 
         if command == 'inserted':
-            status, response = _create_event(request, course_id, response)
+            status, response = _create_event(request, response)
         elif command == 'updated':
-            status, response = _update_event(request, course_id, response)
+            status, response = _update_event(request, response)
         elif command == 'deleted':
-            status, response = _delete_event(request, course_id, response)
+            status, response = _delete_event(request, response)
 
     return JsonResponse(data=response, status=status, safe=False)
 
 
 class InitCalendarView(View):
     """
-    Creates google calendar and associates it with course.
+    Creates google calendar and associates it with user.
     """
     def post(self, request, *args, **kwargs):
-        course_id = request.POST.get('courseId')
-        if course_id is None:
-            return HttpResponse("Provide courseID", status=400)
 
         calendar_data = {
-            'summary': request.POST.get('courseId'),
+            'summary': request.user.username,
             'timeZone': settings.TIME_ZONE}
 
         try:
@@ -298,7 +258,16 @@ class InitCalendarView(View):
             log.exception(e)
             return JsonResponse(data={'errors': e}, status=500, safe=False)
         else:
-            CourseCalendar.objects.create(course_id=course_id,
+            UserCalendar.objects.create(username=request.user.username,
                                           calendar_id=created_calendar['id'])
             return JsonResponse({"calendarId": created_calendar['id']},
                                 status=201)
+
+
+def get_calendar(request):
+    """
+    Display Calendar for user.
+    """
+    context = _create_base_calendar_view_context(request)
+    return render_to_response('calendar_tab/calendar_tab_fragment.html',context)
+

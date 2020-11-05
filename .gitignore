@@ -99,3 +99,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+
+# Migrations folder
+**/migrations/*
+
+calendar_tab/migrations/0001_initial.py

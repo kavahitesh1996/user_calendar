@@ -9,11 +9,11 @@ log = logging.getLogger(__name__)
 APP_ROOT = path(__file__).abspath().dirname()
 STATIC_URL = settings.STATIC_URL
 
-settings.MAKO_TEMPLATES['main'].extend([
-    APP_ROOT / 'templates',
-])
+# settings.MAKO_TEMPLATES['main'].extend([
+#     APP_ROOT / 'templates',
+# ])
 
-log.debug('MAKO_TEMPLATES["main"]: {}'.format(settings.MAKO_TEMPLATES['main']))
+# log.debug('MAKO_TEMPLATES["main"]: {}'.format(settings.MAKO_TEMPLATES['main']))
 
 VENDOR_CSS_URL = '{static_url}calendar_tab/css/vendor/scheduler/dhtmlxscheduler.css'.format(static_url=STATIC_URL)
 VENDOR_JS_URL = '{static_url}calendar_tab/js/vendor/scheduler/_dhtmlxscheduler.js'.format(static_url=STATIC_URL)
