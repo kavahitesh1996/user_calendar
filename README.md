@@ -14,6 +14,8 @@ Users can add/edit/delete his/her event on google calendar in openedx.
     cd ~/edx-platform/
     https://github.com/kavahitesh1996/user_calendar.git
     pip install -e user_calendar/
+    python manage.py lms makemigrations calendar_tab  --settings=production
+    python manage.py lms migrate calendar_tab  --settings=production
 
 
 ## Configuration
