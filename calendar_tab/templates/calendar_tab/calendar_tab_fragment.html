@@ -42,15 +42,11 @@ from openedx.core.djangolib.markup import HTML
 
   % else:
 
-      <p>${_("There is no any active calendar yet.")}</p>
-
-    % if is_staff:
-      <hr class="divider">
-      <button id="calendar-init" type="button" class="btn btn-info btn-lg">${_("Initiate course google calendar")}
-      </button>
-      <span id="initializing"
-            style="display: none;color:green;"><b>${_("Course google calendar is being initialized...")}</b></span>
-    % endif
+    <hr class="divider">
+    <button id="calendar-init" type="button" class="btn btn-info btn-lg">${_("Initiate course google calendar")}
+    </button>
+    <span id="initializing"
+          style="display: none;color:green;"><b>${_("Course google calendar is being initialized...")}</b></span>
 
   % endif
 
