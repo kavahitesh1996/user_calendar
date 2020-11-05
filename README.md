@@ -37,18 +37,18 @@ In general process consists of these steps:
 
 * [create] credentials for Service Account (service account key)
 
-* save json-api-private-key - _you'll need to put it on your server
-  (into "/edx-platform/user_calendar/calendar_tab", for example_);
+* save json-api-private-key - _you'll need to replace it on your server
+  (into "/edx-platform/user_calendar/calendar_tab/edx-calendar-tab-google-api-private-key.json", for example_);
 
 [create]: https://console.developers.google.com/apis/credentials
 
 ### Configure edx-platform
 
-Add "edx-calendar-tab" to installed Django apps
+Add "calendar_tab" to installed Django apps
 
-In "/edx/app/edxapp/lms.env.json" add:
+In "/edx/app/edxapp/edx-platform/lms/env/common.py" add:
 
-    "ADDL_INSTALLED_APPS": ["calendar_tab"],
+    "INSTALLED_APPS": ["calendar_tab"],
 
 and to the list of FEATURES add:
 
@@ -89,6 +89,6 @@ Events may be edited via dialog box(on double click), by dragging
 
 After installation you should get the following state.
 
-* LMS's main menu has Calendar tab:
+* LMS's view:
 
 ![Calendar page](doc/img/lms_calander.png)
