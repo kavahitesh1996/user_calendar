@@ -89,6 +89,6 @@ Events may be edited via dialog box(on double click), by dragging
 
 After installation you should get the following state.
 
-* LMS's view:
+* LMS's view (URL:domain/calendar/view/): 
 
 ![Calendar page](doc/img/lms_calander.png)
