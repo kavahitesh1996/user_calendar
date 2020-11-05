@@ -1,6 +1,6 @@
 # User calendar
 
-Shared calendar for Users
+Shared calendar for Open edX Users.
 
 Users can add/edit/delete his/her event on google calendar in openedx.
 
