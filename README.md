@@ -9,15 +9,12 @@ Users can add/edit/delete his/her event on google calendar in openedx.
 
 ## Installation
 
-    sudo -sHu edxapp
-    cd
-    . edxapp_env
-    pip install -e git+https://github.com/kavahitesh1996/user_calendar.git@master#egg=user_calendar
+    sudo -H -u edxapp bash
+    source /edx/app/edxapp/edxapp_env
+    cd ~/edx-platform/
+    https://github.com/kavahitesh1996/user_calendar.git
+    pip install -e user_calendar/
 
-Django's collectstatic should be performed (change to --settings=devstack for
-devstack installation):
-
-    python edx-platform/manage.py lms collectstatic --settings=aws --noinput
 
 ## Configuration
 
@@ -52,10 +49,9 @@ In "/edx/app/edxapp/edx-platform/lms/env/common.py" add:
 
 and to the list of FEATURES add:
 
-    "ENABLE_CALENDAR": true,
+    "ENABLE_CALENDAR": True,
 
-In "/edx/app/edxapp/edx-platform/lms/urls.py" add __before__
-static_tab urls:
+In "/edx/app/edxapp/edx-platform/lms/urls.py" add below URL
 
     if settings.FEATURES.get('ENABLE_CALENDAR'):
         urlpatterns += (
