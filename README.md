@@ -36,7 +36,7 @@ In general process consists of these steps:
 * [create] credentials for Service Account (service account key)
 
 * save json-api-private-key - _you'll need to replace it on your server
-  (into "/edx-platform/user_calendar/calendar_tab/edx-calendar-tab-google-api-private-key.json", for example_);
+  (into "/edx-platform/user_calendar/calendar_tab/edx-calendar-tab-google-api-private-key.json");
 
 [create]: https://console.developers.google.com/apis/credentials
 
